@@ -87,6 +87,7 @@ def run_all_checks():
     check_gameloot()
     check_dacby()
     check_gamenation()
+    check_cashify()
     print("All checks completed.")
 
 if __name__ == "__main__":
