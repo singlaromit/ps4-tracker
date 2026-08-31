@@ -1,5 +1,6 @@
 import re
 import requests
+import cloudscraper
 from bs4 import BeautifulSoup
 from database import init_db, record_price
 
@@ -8,16 +9,9 @@ HEADERS = {
 }
 
 def clean_price_text(raw_text):
-    """Finds the actual price by extracting the largest numeric block."""
-    # Remove commas so 22,999 becomes 22999
     raw_text = raw_text.replace(",", "")
-    
-    # Find all standalone numbers in the string
     numbers = re.findall(r'\d+', raw_text)
-    
     if numbers:
-        # Convert all found string numbers to floats and grab the largest one
-        # This completely ignores stray 0s or .00 decimals
         valid_numbers = [float(num) for num in numbers]
         return max(valid_numbers)
     return 0.0
@@ -25,7 +19,10 @@ def clean_price_text(raw_text):
 def check_gameloot():
     url = "https://gameloot.in/shop/sony-playstation-4-slim-1tb-pre-owned/"
     try:
-        response = requests.get(url, headers=HEADERS, timeout=10)
+        # cloudscraper acts as a real browser to bypass security firewalls
+        scraper = cloudscraper.create_scraper()
+        response = scraper.get(url, timeout=15)
+        
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, "html.parser")
             
@@ -75,12 +72,11 @@ def check_gamenation():
 def check_cashify():
     url = "https://www.cashify.in/buy-refurbished-consoles/sony-playstation-4-slim-1-tb"
     try:
-        # Static baseline for React-heavy frontend
         record_price("Cashify", "PS4 Slim", "1TB", "Refurbished", 23999.0, True, url, "Available for 160022 delivery")
         print("Cashify: Recorded ₹23,999")
     except Exception as e:
         print(f"Cashify Scraper Error: {e}")
-        
+
 def run_all_checks():
     init_db()
     print("Running scheduled price check across all platforms...")
